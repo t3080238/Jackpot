@@ -1,0 +1,101 @@
+ES6:
+1.Let & Const, Block-Scoped
+    必須先定義後使用
+    不可重複定義
+
+2.Arrow Functions，箭頭函數，且不自帶this，所以this為上一層的父親
+
+    // 如果有多行函數內容，跟一般函數一樣，用大括號 {} 包住
+    (param1, param2, …, paramN) => { statements }
+
+    // 可以用 return 返回值
+    (param1, param2, …, paramN) => { return expression; }
+
+    // 如果只有一行 expression 語句，可以省略大括號 {}
+    // 同時 expression 的值，會被當作是函數返回值
+    (param1, param2, …, paramN) => expression
+
+    // 如果只有一個參數，可以省略參數小括號 ()
+    (singleParam) => { statements }
+    singleParam => { statements }
+
+    // 如果沒有參數，必須留著空的小括號 ()，不能省略
+    () => { statements }
+    () => expression
+
+3.Default Parameters預設值
+    function test(a, b){
+        var a = a || 'AAA';
+    }
+
+4.Multi-line Strings
+    可換行字串‵ ‵取代' '及" "
+
+5.Object Literals 物件名稱簡化
+
+
+
+6.Template Literals
+    // es5
+    // var name = ‘Your name is ‘ + first + ‘ ‘ + last + ‘.’
+    var name = `Your name is ${first} ${last}.`
+
+7.Spread Operator 展開運算子
+    function foo(a, b, c, d, e) {
+        console.log(a, b, c, d, e);
+    }
+
+    var arr = [3, 4];
+
+    // 輸出 1 2 3 4 5
+    // 等同於執行 foo(1, 2, 3, 4, 5)
+    foo(1, 2, ...arr, 5);
+
+8.Rest Operator 其餘運算子
+    function fun1(...myArgs) {
+    console.log(myArgs);
+    }
+
+    // 顯示 []
+    fun1();
+
+    // 顯示 [1]
+    fun1(1);
+
+    // 顯示 [5, 6, 7]
+    fun1(5, 6, 7);
+
+Array Destructuring 陣列的解構賦值
+
+    
+9.動態屬性名稱
+    var prefix = 'es6';
+
+    var obj = {
+        // 計算屬性
+        [prefix + ' is']: 'cool',
+        
+        // 計算方法
+        [prefix + ' score']() {
+            console.log(100);
+        }
+    };
+    
+    // 顯示 cool
+    console.log(obj['es6 is']);
+
+    // 顯示 100
+    obj['es6 score']();
+
+10.Octal Literal 八進位表示法
+    var oValue = 0o10;
+
+    // 8
+    console.log(oValue);
+Binary Literal 二進位表示法
+    var bValue = 0b10;
+
+    // 2
+    console.log(bValue);
+
+11.
