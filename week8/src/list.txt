@@ -1,3 +1,5 @@
+https://www.fooish.com/javascript/es6/class.html
+
 ES6:
 1.Let & Const, Block-Scoped
     必須先定義後使用
@@ -32,7 +34,6 @@ ES6:
     可換行字串‵ ‵取代' '及" "
 
 5.Object Literals 物件名稱簡化
-
 
 
 6.Template Literals
@@ -98,4 +99,108 @@ Binary Literal 二進位表示法
     // 2
     console.log(bValue);
 
-11.
+11.Array Destructuring 陣列的解構賦值
+    var foo = ['one', 'two', 'three'];
+
+    // 從 array 中提取值，然後按照對應的位置，指定給相應的變數
+    var [one, two, three] = foo;
+
+
+    var [a, ...b] = [1, 2, 3];
+
+    // 1
+    console.log(a);
+
+    // [2, 3]
+    console.log(b);
+
+12.Object Destructuring 物件的解構賦值
+    var o = {p: 42, q: true};
+
+    // 從物件 o 中取出 key 為 p 和 q 的值，指定給變數 p 和 q
+    var {q, p} = o;
+
+    // 42
+    console.log(p);
+
+    // true
+    console.log(q);
+
+你的變數名稱可以和被取值的 object key 使用不同的名稱：
+    var {p: foo, q: bar} = o;
+
+    // 42
+    console.log(foo);
+
+    // true
+    console.log(bar);
+
+還可以用在函數的參數列上：
+    function drawES2015Chart({size = 'big', cords = {x: 0, y: 0}, radius = 25}) {
+        console.log(size, cords, radius);
+    }
+
+    // 輸出 big {x: 18, y: 30} 30
+    drawES2015Chart({
+        cords: {x: 18, y: 30},
+        radius: 30
+    });
+
+13.樣板標籤 Tagged Template Literals
+    function myTag(strings, personExp, ageExp) {
+
+        // 首先依 ${} 的位置將原始字串切成一個字串陣列，得到 strings
+        // ["that ", " is a ", ""]
+        //
+        // 為什麼最後有一個 ""
+        // 因為我們有一個 ${} 的位置在字串結尾
+        
+        // ${ person } 的值會被當作第二個參數傳入
+        // ${ age } 的值會被當作第三個參數傳入
+
+        // "that "
+        var str0 = strings[0];
+        // " is a "
+        var str1 = strings[1];
+
+        var ageStr;
+
+        if (ageExp > 99) {
+            ageStr = 'centenarian';
+        } else {
+            ageStr = 'youngster';
+        }
+
+        // ${ person } 的值會被當作第二個參數傳入
+        return str0 + personExp + str1 + ageStr;
+    }
+
+    var output = myTag`that ${ person } is a ${ age }`;
+
+    // 顯示 that Mike is a youngster
+    console.log(output);
+
+14.for ... of
+    跟 forEach 不同的是 for...of可以搭配 break, continue, return 語句
+
+    // for (variable of iterable){}
+
+    // let arr = [];
+
+    // for(let i = 0 ; i < 100 ; i++){   
+    //     arr[i] = {};
+    //     arr[i].txt = `abc${i}`;
+    //     arr[i].int = i;
+    // }
+
+    // for(eacharr of arr){
+    //     if (eacharr.int%2 == 0) continue;    
+    //     console.log(eacharr.txt);
+    // }
+
+15. class, extends, super
+    super();：為呼叫父類別的constructor
+    super.屬性：引用父類別的屬性
+    透過 super 調用父類別的方法時，super 會綁定子類別的 this，而不是父類別的 this
+
+16.Promise 
