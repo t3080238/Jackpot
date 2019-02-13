@@ -1,5 +1,5 @@
-import game from './game.js';
+import jackpot from './jackpot.js';
 
 window.onload = function(){
-    game();
+    jackpot();
 }

@@ -18,8 +18,8 @@
     "gsap": "^2.0.2",
     "pixi.js": "^4.8.5",
     "style-loader": "^0.23.1",
-    "webpack": "^4.29.0",
-    "webpack-cli": "^3.2.1"
+    "webpack": "^4.29.3",
+    "webpack-cli": "^3.2.3"
   },
   "dependencies": {
     "jquery": "^3.3.1"
