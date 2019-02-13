@@ -3,10 +3,11 @@ export default function jackpot() {
     const [borderX, borderY, borderW, borderH] = [250, 40, 630, 600];
     const columnDist = 181;
     const [iconX, iconY, iconW, iconH] = [borderX + 49, borderY + 76, 170, 150];
-    const [play, pause] = ["play", "pause"];
+    const [start, running, stop, pause] = ["start", "running", "stop", "pause"];
 
     let columns = [];
     let state = pause;
+
 
     //Aliases 設定別名
     let Application = PIXI.Application,
@@ -56,7 +57,9 @@ export default function jackpot() {
             this.x = x;
             this.y = y;
             this.iconTex = [];
-            this.spritesContainer = new PIXI.Container();
+            this.spritesContainer = new Container();
+            this.tl = new TimelineMax();
+            this.state = pause;
 
             for (let i = 0; i < 9; i++) {
                 this.iconTex[i] = TextureCache[`icon${i + 1}.jpg`];
@@ -70,12 +73,39 @@ export default function jackpot() {
                 this.sprites[i].height = iconH;
                 this.spritesContainer.addChild(this.sprites[i]);
             }
+            this.spritesContainer.y = 7050;
             app.stage.addChild(this.spritesContainer);
 
         };
-        /*move() {
-            //tl = new TimelineLite();
-        }*/
+
+        start() {
+            this.state = start;
+            this.sprites[0].texture = this.sprites[47].texture;
+            this.sprites[1].texture = this.sprites[48].texture;
+            this.sprites[2].texture = this.sprites[49].texture;
+
+            this.tl.set(this.spritesContainer, { y: 0 })
+                .to(this.spritesContainer, 5, { y: 7050, ease: Power2.easeIn }) 
+                .add(() => { this.state = running })
+                .add(() => { this.repeat(this.tl) });
+
+        };
+
+        repeat(tl){
+            if(this.state === running ){
+                tl.set(this.spritesContainer, { y: 0 })
+                    .to(this.spritesContainer, 2, { y: 7050 , ease: Power0.easeNone})
+                    .add(() => { this.repeat(this.tl)} );
+            }
+        }
+
+        stop() {
+            this.state = stop
+            this.tl.set(this.spritesContainer, { y: 0 })
+                .to(this.spritesContainer, 5, { y: 7050, ease: Power2.easeOut })
+                .add(() => { state = pause; });
+
+        };
     }
 
     function initial() {
@@ -91,27 +121,22 @@ export default function jackpot() {
     }
 
     function startMove() {
-        let tl = new TimelineLite();
-        tl.staggerTo([columns[0].spritesContainer,
-        columns[1].spritesContainer,
-        columns[2].spritesContainer], 5, { y: 7500 - 450, ease: Power2.easeIn }, 0.5)
-        //columns[2].spritesContainer], 10, { y: 15000 - 450, ease: Power2.easeInOut }, 0.5)
-        //setTimeout(endMove, 5000);
+        let tl = new TimelineMax();
+
+        tl.add(() => { columns[0].start(); })
+        .add(() => { columns[1].start(); }, 0.5)
+        .add(() => { columns[2].start(); }, 1)
+        .add(() => { state = running }, 6);
+
     }
 
-    function endMove() {
-        console.log('10s');
+    function stopMove() {
+        let tl = new TimelineMax();
 
-        let tl = new TimelineLite();
-
-        tl.set([columns[0].spritesContainer,
-        columns[1].spritesContainer,
-        columns[2].spritesContainer], { y: 0 });
-
-        tl.staggerTo([columns[0].spritesContainer,
-        columns[1].spritesContainer,
-        columns[2].spritesContainer], 5, { y: 7500 - 450, ease: Power2.easeOut }, 0.5)
-        state = pause;
+        tl.add(() => { columns[0].stop(); })
+        .add(() => { columns[1].stop(); }, 0.5)
+        .add(() => { columns[2].stop(); }, 1)
+        .add(() => { state = pause }, 6);
     }
 
 
@@ -120,10 +145,13 @@ export default function jackpot() {
 
         keySpace.press = () => {
             if (state === pause) {
-                state = play;
+                state = start;
                 startMove();
             }
-            else endMove();
+            else if (state === running) {
+                state = stop;
+                stopMove();
+            }
         };
     }
 
