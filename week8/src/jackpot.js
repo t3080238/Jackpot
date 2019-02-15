@@ -4,6 +4,7 @@ export default function jackpot() {
     const columnDist = 181;
     const [iconX, iconY, iconW, iconH] = [borderX + 49, borderY + 76, 170, 150];
     const [start, running, stop, pause] = ["start", "running", "stop", "pause"];
+    const [startSecond, repeatSecond, stopSecond] = [5, 2, 5];
 
     let columns = [];
     let state;
@@ -102,7 +103,7 @@ export default function jackpot() {
             }
 
             this.tl.set(this.spritesContainer, { y: 0 })
-                .to(this.spritesContainer, 5, { y: 7050, ease: Power2.easeIn })
+                .to(this.spritesContainer, startSecond, { y: 7050, ease: Power2.easeIn })
                 .add(() => { this.state = running })
                 .add(() => { this.repeat(this.tl) });
 
@@ -112,7 +113,7 @@ export default function jackpot() {
         repeat(tl) {
             if (this.state === running) {
                 tl.set(this.spritesContainer, { y: 0 })
-                    .to(this.spritesContainer, 2, { y: 7050, ease: Power0.easeNone })
+                    .to(this.spritesContainer, repeatSecond, { y: 7050, ease: Power0.easeNone })
                     .add(() => { this.repeat(this.tl) });
             }
         }
@@ -121,7 +122,7 @@ export default function jackpot() {
             this.state = stop
             this.tl.set(this.spritesContainer, { y: 0 })
                 .add(() => { this.showResult(); })
-                .to(this.spritesContainer, 5, { y: 7050, ease: Power2.easeOut })
+                .to(this.spritesContainer, stopSecond, { y: 7050, ease: Power2.easeOut })
                 .add(() => { this.state = pause; });
 
         };
@@ -147,7 +148,7 @@ export default function jackpot() {
                 fontFamily: "Arial",
                 fontSize: 72,
                 fill: "#91D7F3",
-                stroke: '#0000ff',
+                stroke: '#0000FF',
                 strokeThickness: 6
             });
             this.styleGrey = new PIXI.TextStyle({
@@ -161,7 +162,14 @@ export default function jackpot() {
                 fontFamily: "Arial",
                 fontSize: 72,
                 fill: "#FFAFAF",
-                stroke: '#ff0000',
+                stroke: '#FF0000',
+                strokeThickness: 6
+            });
+            this.styleYellow = new PIXI.TextStyle({
+                fontFamily: "Arial",
+                fontSize: 72,
+                fill: "#FFFF00",
+                stroke: '#FF6830',
                 strokeThickness: 6
             });
 
@@ -250,6 +258,13 @@ export default function jackpot() {
 
         //產生紅線
         creatRedLine();
+
+        //
+        scoreTex = new PIXI.Text("0", button.styleYellow);
+        scoreTex.alpha = 0;
+        scoreTex.position.set(borderX + borderW / 2 - 24, borderY + borderH / 2 - 38);
+        app.stage.addChild(scoreTex);
+
     }
 
     function startMove() {
@@ -264,7 +279,7 @@ export default function jackpot() {
         tl.add(() => { columns[0].start(); })
             .add(() => { columns[1].start(); }, 0.5)
             .add(() => { columns[2].start(); }, 1)
-            .add(() => { decineResult(); }, 6);
+            .add(() => { decineResult(); }, 1 + startSecond);
 
     }
 
@@ -274,7 +289,7 @@ export default function jackpot() {
         tl.add(() => { columns[0].stop(); })
             .add(() => { columns[1].stop(); }, 0.5)
             .add(() => { columns[2].stop(); }, 1)
-            .add(() => { showRedLine(); }, 7);
+            .add(() => { showRedLine(); }, 2 + stopSecond);
     }
 
     function setKeyboard() {
@@ -337,7 +352,7 @@ export default function jackpot() {
             console.log('TCL: decineResult -> result', result)
         }
         //中獎
-        else if (score < 900) {
+        else if (score < 800) {
             isWin = true;
 
             do {
@@ -354,11 +369,14 @@ export default function jackpot() {
             );
             console.log('TCL: decineResult -> result', result)
 
-            if (result[0] === result[1] && result[1] === result[2]) line[0].visible = true;
-            if (result[3] === result[4] && result[4] === result[5]) line[1].visible = true;
-            if (result[6] === result[7] && result[7] === result[8]) line[2].visible = true;
-            if (result[2] === result[4] && result[4] === result[6]) line[4].visible = true;
-            if (result[0] === result[4] && result[4] === result[8]) line[3].visible = true;
+            let num = 0;
+            if (result[0] === result[1] && result[1] === result[2]){ line[0].visible = true; num++;}
+            if (result[3] === result[4] && result[4] === result[5]){ line[1].visible = true; num++;}
+            if (result[6] === result[7] && result[7] === result[8]){ line[2].visible = true; num++;}
+            if (result[2] === result[4] && result[4] === result[6]){ line[4].visible = true; num++;}
+            if (result[0] === result[4] && result[4] === result[8]){ line[3].visible = true; num++;}
+
+            scoreTex.score = 100 * Math.pow(num, 2);
         }
         //中大獎
         else if (score <= 1000) {
@@ -368,6 +386,7 @@ export default function jackpot() {
             line.forEach((lin) => {
                 lin.visible = true;
             });
+            scoreTex.score = 10000 - num * 1000;
             console.log('TCL: decineResult -> result', result)
         }
 
@@ -379,8 +398,6 @@ export default function jackpot() {
         button.buttonStop.visible = true;
         button.txtStart.text = "Stop";
         button.txtStart.style = button.styleRed;
-
-
     }
 
     function showRedLine() {
@@ -394,14 +411,37 @@ export default function jackpot() {
 
         let tl = new TimelineMax();
         tl.fromTo(line, 0.5, { alpha: 1, ease: Power4.easeOut }, { alpha: 0, repeat: 3 })
+            .add(() => { showScore(); })
+
+
+    }
+
+    function showScore() {
+        console.log("showScore");
+        let tl = new TimelineMax();
+        /*tl.fromTo(scoreTex, 5, {text: 0, onUpdate:     function (text){
+            return Math.floor(text)
+        } , onUpdateParams: [scoreTex]}, {text: 100 , onUpdate:     function (text){
+            return Math.floor(text)
+        }, onUpdateParams: [scoreTex]})*/
+        tl.set(scoreTex, { text: 0, alpha: 1 ,x: borderX + borderW / 2 - 24})
+            .to(scoreTex, 2, {
+                text: scoreTex.score, ease: Power0.easeNone, onUpdate: () => {
+                    scoreTex.text = Math.floor(scoreTex.text);
+                    scoreTex.x = borderX + borderW / 2 - 24 - 20 * Math.floor(Math.log10(scoreTex.text));
+                }
+            })
+            .to(scoreTex, 1, {alpha: 0, ease:Power4.easeIn})
             .add(() => {
                 state = pause;
                 button.buttonStart.visible = true;
                 button.txtStart.text = "Spin";
                 button.txtStart.style = button.styleBlue;
-                console.log('TCL: showRedLine -> state', state)
-            }, 2);
+            });
+
     }
+
+
 
     function keyboard(keyCode) {
         let key = {};
