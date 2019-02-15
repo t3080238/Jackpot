@@ -4,14 +4,17 @@ export default function jackpot() {
     const columnDist = 181;
     const [iconX, iconY, iconW, iconH] = [borderX + 49, borderY + 76, 170, 150];
     const [start, running, stop, pause] = ["start", "running", "stop", "pause"];
-    const [startSecond, repeatSecond, stopSecond] = [5, 2, 5];
+    const [startSecond, repeatSecond, stopSecond] = [5 / 4, 2 / 4, 5 / 4];
+    const pay = 1000;
+    const playerOriginScore = 2000;
+
 
     let columns = [];
     let state;
     let line = [];
     let isWin = false;
     let button;
-    let scoreTex;
+    let score;
 
     //Aliases 設定別名
     let Application = PIXI.Application,
@@ -21,16 +24,15 @@ export default function jackpot() {
         TextureCache = PIXI.utils.TextureCache,
         Graphics = PIXI.Graphics,
         Container = PIXI.Container
-    //AnimatedSprite = PIXI.extras.AnimatedSprite;
 
 
     // Create a Pixi Application 
     let app = new Application({
-        width: screenW,         // default: 1024
-        height: screenH,        // default: 768
-        antialias: true,    // default: false
-        transparent: false, // default: false
-        resolution: 1,       // default: 1
+        width: screenW,
+        height: screenH,
+        antialias: true,
+        transparent: false,
+        resolution: 1,
         backgroundColor: 0xeeeeee
     });
 
@@ -67,6 +69,7 @@ export default function jackpot() {
             this.x = x;
             this.y = y;
             this.iconTex = [];
+            this.sprites = [];
             this.spritesContainer = new Container();
             this.tl = new TimelineMax();
             this.state = pause;
@@ -74,7 +77,6 @@ export default function jackpot() {
             for (let i = 0; i < 9; i++) {
                 this.iconTex[i] = TextureCache[`icon${i + 1}.jpg`];
             }
-            this.sprites = [];
 
             for (let i = 0; i < 50; i++) {
                 this.sprites[i] = new Sprite(this.iconTex[randomInt(0, 8)]);
@@ -104,26 +106,30 @@ export default function jackpot() {
 
             this.tl.set(this.spritesContainer, { y: 0 })
                 .to(this.spritesContainer, startSecond, { y: 7050, ease: Power2.easeIn })
-                .add(() => { this.state = running })
-                .add(() => { this.repeat(this.tl) });
-
+                .add(() => {
+                    this.state = running;
+                    this.repeat();
+                });
         };
 
         //在停止前不斷旋轉
-        repeat(tl) {
+        repeat() {
             if (this.state === running) {
-                tl.set(this.spritesContainer, { y: 0 })
+                this.tl.set(this.spritesContainer, { y: 0 })
                     .to(this.spritesContainer, repeatSecond, { y: 7050, ease: Power0.easeNone })
-                    .add(() => { this.repeat(this.tl) });
+                    //.add(() => { this.repeat(this.tl) });
+                    .add(this.repeat.bind(this))
             }
         }
 
         stop() {
             this.state = stop
             this.tl.set(this.spritesContainer, { y: 0 })
-                .add(() => { this.showResult(); })
+                //.add(() => { this.showResult(); })
+                .add( this.showResult.bind(this) )
                 .to(this.spritesContainer, stopSecond, { y: 7050, ease: Power2.easeOut })
-                .add(() => { this.state = pause; });
+                .add(() => { this.state = pause; })
+                 
 
         };
 
@@ -215,6 +221,7 @@ export default function jackpot() {
         buttonDowm() {
             console.log('TCL: keySpace.press -> state', state)
             if (state === pause) {
+                if (score.playerScoreTex.score < pay) return;
                 state = start;
                 this.buttonStart.visible = false;
                 this.txtStart.style = this.styleGrey;
@@ -228,6 +235,56 @@ export default function jackpot() {
             }
         };
 
+    }
+
+    class scoreSystem {
+        constructor() {
+            this.tl = new TimelineMax();
+
+            //產生得獎分數
+            this.winScoreTex = new PIXI.Text("0", button.styleYellow);
+            this.winScoreTex.alpha = 0;
+            this.winScoreTex.position.set(borderX + borderW / 2 - 24, borderY + borderH / 2 - 38);
+            app.stage.addChild(this.winScoreTex);
+
+            //產生玩家分數
+            this.playerScoreTex = new PIXI.Text(playerOriginScore, button.styleYellow);
+            this.playerScoreTex.score = playerOriginScore;
+            this.playerScoreTex.position.set(borderX + 200, borderY + borderH + 20);
+            app.stage.addChild(this.playerScoreTex);
+
+            //閃亮亮特效
+
+        }
+
+        start() {
+
+            this.playerScoreTex.score -= pay;
+            this.tl.to(this.playerScoreTex, 1, {
+                text: this.playerScoreTex.score, ease: Power0.easeNone, onUpdate: () => {
+                    this.playerScoreTex.text = Math.floor(this.playerScoreTex.text);
+                    this.playerScoreTex.x = borderX + 200 - 40 * Math.floor(Math.log10(this.playerScoreTex.text) - 3);
+                    if (this.playerScoreTex.text === '0') this.playerScoreTex.x = borderX + 320;
+                }
+            })
+        }
+
+        updateScore() {
+            this.tl.set(this.winScoreTex, { text: 0, alpha: 1, x: borderX + borderW / 2 - 24 })
+                .to(this.winScoreTex, 0.7, {
+                    text: this.winScoreTex.score, ease: Power0.easeNone, onUpdate: () => {
+                        this.winScoreTex.text = Math.floor(this.winScoreTex.text);
+                        this.winScoreTex.x = borderX + borderW / 2 - 24 - 20 * Math.floor(Math.log10(this.winScoreTex.text));
+                    }
+                })
+                .to(this.winScoreTex, 1, { alpha: 0, ease: Power4.easeIn })
+                .to(this.playerScoreTex, 1, {
+                    text: this.playerScoreTex.score, ease: Power0.easeNone, onUpdate: () => {
+                        this.playerScoreTex.text = Math.floor(this.playerScoreTex.text);
+                        this.playerScoreTex.x = borderX + 200 - 40 * Math.floor(Math.log10(this.playerScoreTex.text) - 3);
+                    }
+                }, '-=1')
+        }
     }
 
     function initial() {
@@ -259,12 +316,8 @@ export default function jackpot() {
         //產生紅線
         creatRedLine();
 
-        //
-        scoreTex = new PIXI.Text("0", button.styleYellow);
-        scoreTex.alpha = 0;
-        scoreTex.position.set(borderX + borderW / 2 - 24, borderY + borderH / 2 - 38);
-        app.stage.addChild(scoreTex);
-
+        //分數系統
+        score = new scoreSystem();
     }
 
     function startMove() {
@@ -276,11 +329,12 @@ export default function jackpot() {
         line.forEach((lin) => {
             lin.visible = false;
         });
-        tl.add(() => { columns[0].start(); })
+
+        score.start();
+        tl.add(() => { columns[0].start(); }, 0)
             .add(() => { columns[1].start(); }, 0.5)
             .add(() => { columns[2].start(); }, 1)
             .add(() => { decineResult(); }, 1 + startSecond);
-
     }
 
     function stopMove() {
@@ -330,12 +384,12 @@ export default function jackpot() {
     }
 
     function decineResult() {
-        let score = randomInt(0, 1000);
+        let randomScore = randomInt(0, 1000);
         let result = [];
-        console.log('TCL: decineResult -> score', score);
+        console.log('TCL: decineResult -> score', randomScore);
 
         //沒中獎
-        if (score < 200) {
+        if (randomScore < 200) {
             isWin = false;
             do {
                 for (let i = 0; i < 9; i++) {
@@ -350,43 +404,38 @@ export default function jackpot() {
                 (result[0] === result[4] && result[4] === result[8])
             );
             console.log('TCL: decineResult -> result', result)
+            score.winScoreTex.score = 0;
         }
         //中獎
-        else if (score < 800) {
+        else if (randomScore < 800) {
             isWin = true;
+            let num;
 
             do {
                 for (let i = 0; i < 9; i++) {
                     result[i] = randomInt(0, 8);
                 }
+                num = 0;
+                if (result[0] === result[1] && result[1] === result[2]) { line[0].visible = true; num++; }
+                if (result[3] === result[4] && result[4] === result[5]) { line[1].visible = true; num++; }
+                if (result[6] === result[7] && result[7] === result[8]) { line[2].visible = true; num++; }
+                if (result[2] === result[4] && result[4] === result[6]) { line[4].visible = true; num++; }
+                if (result[0] === result[4] && result[4] === result[8]) { line[3].visible = true; num++; }
 
-            } while ((
-                (result[0] === result[1] && result[1] === result[2]) ||
-                (result[3] === result[4] && result[4] === result[5]) ||
-                (result[6] === result[7] && result[7] === result[8]) ||
-                (result[2] === result[4] && result[4] === result[6]) ||
-                (result[0] === result[4] && result[4] === result[8])) === false
-            );
+            } while (num === 0);
             console.log('TCL: decineResult -> result', result)
 
-            let num = 0;
-            if (result[0] === result[1] && result[1] === result[2]){ line[0].visible = true; num++;}
-            if (result[3] === result[4] && result[4] === result[5]){ line[1].visible = true; num++;}
-            if (result[6] === result[7] && result[7] === result[8]){ line[2].visible = true; num++;}
-            if (result[2] === result[4] && result[4] === result[6]){ line[4].visible = true; num++;}
-            if (result[0] === result[4] && result[4] === result[8]){ line[3].visible = true; num++;}
-
-            scoreTex.score = 100 * Math.pow(num, 2);
+            score.winScoreTex.score = 100 * Math.pow(num, 2);
         }
         //中大獎
-        else if (score <= 1000) {
+        else if (randomScore <= 1000) {
             isWin = true;
             let num = randomInt(0, 8);
             result = [num, num, num, num, num, num, num, num, num];
             line.forEach((lin) => {
                 lin.visible = true;
             });
-            scoreTex.score = 10000 - num * 1000;
+            score.winScoreTex.score = 10000 - num * 1000;
             console.log('TCL: decineResult -> result', result)
         }
 
@@ -395,6 +444,7 @@ export default function jackpot() {
         columns[2].getResult(result[2], result[5], result[8]);
 
         state = running;
+        score.playerScoreTex.score += score.winScoreTex.score;
         button.buttonStop.visible = true;
         button.txtStart.text = "Stop";
         button.txtStart.style = button.styleRed;
@@ -406,39 +456,32 @@ export default function jackpot() {
             button.buttonStart.visible = true;
             button.txtStart.text = "Spin";
             button.txtStart.style = button.styleBlue;
+            if (score.playerScoreTex.score < pay) {
+                button.buttonStart.visible = false;
+                button.txtStart.style = button.styleGrey;
+            }
             return;
         }
 
         let tl = new TimelineMax();
         tl.fromTo(line, 0.5, { alpha: 1, ease: Power4.easeOut }, { alpha: 0, repeat: 3 })
             .add(() => { showScore(); })
-
-
     }
 
     function showScore() {
         console.log("showScore");
         let tl = new TimelineMax();
-        /*tl.fromTo(scoreTex, 5, {text: 0, onUpdate:     function (text){
-            return Math.floor(text)
-        } , onUpdateParams: [scoreTex]}, {text: 100 , onUpdate:     function (text){
-            return Math.floor(text)
-        }, onUpdateParams: [scoreTex]})*/
-        tl.set(scoreTex, { text: 0, alpha: 1 ,x: borderX + borderW / 2 - 24})
-            .to(scoreTex, 2, {
-                text: scoreTex.score, ease: Power0.easeNone, onUpdate: () => {
-                    scoreTex.text = Math.floor(scoreTex.text);
-                    scoreTex.x = borderX + borderW / 2 - 24 - 20 * Math.floor(Math.log10(scoreTex.text));
-                }
-            })
-            .to(scoreTex, 1, {alpha: 0, ease:Power4.easeIn})
-            .add(() => {
-                state = pause;
-                button.buttonStart.visible = true;
-                button.txtStart.text = "Spin";
-                button.txtStart.style = button.styleBlue;
-            });
-
+        score.updateScore();
+        tl.add(() => {
+            state = pause;
+            button.buttonStart.visible = true;
+            button.txtStart.text = "Spin";
+            button.txtStart.style = button.styleBlue;
+            if (score.playerScoreTex.score < pay) {
+                button.buttonStart.visible = false;
+                button.txtStart.style = button.styleGrey;
+            }
+        }, 1);
     }
 
 
